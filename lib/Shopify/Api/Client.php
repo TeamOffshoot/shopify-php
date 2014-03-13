@@ -112,6 +112,12 @@ class Client
         $calculated = array();
 
         foreach ($params as $key => $value) {
+            if ($key == 'signature') {
+                continue;
+            }
+            if ($key == 'admin' && $value == 1) {
+                continue;
+            }
             $calculated[] = $key . "=" . $value;
         }
 

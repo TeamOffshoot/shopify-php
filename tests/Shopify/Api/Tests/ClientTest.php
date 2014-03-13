@@ -78,6 +78,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'shop' => "some-shop.myshopify.com",
             'code' => "a94a110d86d2452eb3e2af4cfb8a3828",
             'timestamp' => "1337178173", // 2012-05-16 14:22:53
+            'signature' => $signature,
+            'admin' => 1,
         );
 
         $this->assertEquals($signature, $this->api->generateSignature($params));
