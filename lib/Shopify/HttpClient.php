@@ -7,6 +7,8 @@ interface HttpClient
 
     const POST = 'post';
     const GET = 'get';
+    const PUT = 'put';
+    const DELETE = 'delete';
 
     /**
      * set the Shopify permanent access token
@@ -29,5 +31,21 @@ interface HttpClient
      * @return mixed
      */
     public function post($uri, $params = null);
-
+    
+    /**
+     * make a put request to the given uri
+     * @param string $uri
+     * @param array|string $params
+     * @return mixed
+     */
+    public function put($uri, $params = null);
+    
+    /**
+     * make a delete request to the given uri
+     * @param string $uri
+     * @param array|string $params
+     * @return mixed
+    */
+    public function delete($uri, $params = null);
+    
 }

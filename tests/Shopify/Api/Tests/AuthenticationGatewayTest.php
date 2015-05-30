@@ -5,10 +5,19 @@ namespace Shopify\Api\Tests;
 class AuthenticationGatewayTest extends \PHPUnit_Framework_TestCase
 {
 
+    /**
+     * @var \Shopify\Api\AuthenticationGateway
+     */
     protected $authenticate;
 
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
     protected $httpClient;
 
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
     protected $redirector;
 
     public function setUp()

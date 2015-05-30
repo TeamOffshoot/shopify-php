@@ -139,16 +139,17 @@ class AuthenticationGateway
             'code' => $temporaryToken,
         );
 
-        $response = json_decode($this->httpClient->post(
+        $response = $this->httpClient->post(
             $this->getAccessUri(),
             $request
-        ));
+        );
 
+        $response_obj = json_decode($response);
         if (isset($response->error)) {
-            throw new \RuntimeException($response->error);
+            throw new \RuntimeException($response_obj->error);
         }
 
-        return isset($response->access_token) ? $response->access_token : null;
+        return isset($response_obj->access_token) ? $response_obj->access_token : null;
 
     }
 

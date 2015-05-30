@@ -34,10 +34,14 @@ class Client
     /**
      * initialize the API client
      * @param HttpClient $client
+     * @param $options
      */
-    public function __construct(HttpClient $client)
+    public function __construct(HttpClient $client, $options=null)
     {
         $this->httpClient = $client;
+        if (is_object($options)) foreach (get_object_vars($this) as $key=>$value) {
+            if (isset($options->$key)) $this->$key = $options->$key;
+        }
     }
 
     /**
@@ -97,14 +101,41 @@ class Client
     {
         return $this->makeApiRequest($resource, $data, HttpClient::POST);
     }
+    
+    /**
+     * make a PUT request to the Shopify API
+     * @param string $resource
+     * @param array $data
+     * @return \stdClass
+     */
+    public function put($resource, array $data = array())
+    {
+        return $this->makeApiRequest($resource, $data, HttpClient::PUT);
+    }
+    
+    /**
+     * make a DELETE request to the Shopify API
+     * @param string $resource
+     * @param array $data
+     * @return \stdClass
+     */
+    public function delete($resource, array $data = array())
+    {
+        return $this->makeApiRequest($resource, $data, HttpClient::DELETE);
+    }
 
     /**
      * generate the signature as required by shopify
      * @param array $params
+     * @param bool $hmac
      * @return string
      */
-    public function generateSignature(array $params)
+    public function generateSignature(array $params, $hmac=true)
     {
+        return self::doGenerateSignature($this->getClientSecret(), $params, $hmac);
+    }
+
+    public static function doGenerateSignature($secret, array $params, $hmac=true) {
 
         // Collect the URL parameters into an array of elements of the format
         // "$parameter_name=$parameter_value"
@@ -115,14 +146,29 @@ class Client
             $calculated[] = $key . "=" . $value;
         }
 
-        // Sort the key/value pairs in the array
-        sort($calculated);
+        if ($hmac)
+        {
+            // Sort the key/value pairs in the array
+            asort($calculated);
 
-        // Join the array elements into a string
-        $calculated = implode('', $calculated);
+            // Join the array elements into a string
+            $calculated = implode('&', $calculated);
 
-        // Final calculated_signature to compare against
-        return md5($this->getClientSecret() . $calculated);
+            // Final calculated_signature to compare against
+            return hash_hmac('sha256', $calculated, $secret);
+        }
+        else
+        {
+            // note: md5 validation has been deprecated
+            // Sort the key/value pairs in the array
+            sort($calculated);
+
+            // Join the array elements into a string
+            $calculated = implode('', $calculated);
+
+            // Final calculated_signature to compare against
+            return md5($secret . $calculated);
+        }
 
     }
 
@@ -132,16 +178,26 @@ class Client
      */
     public function validateSignature(array $params)
     {
-
-        $this->assertRequestParamIsNotNull(
-            $params, 'signature', 'Expected signature in query params'
-        );
-
+        if (empty($params['hmac']) && empty($params['signature'])) {
+            $this->assertRequestParamIsNotNull(
+                $params, 'signature', 'Expected signature in query params'
+            );
+        }
+        return self::doValidateSignature($this->getClientSecret(), $params);
+    }
+    public static function doValidateSignature($secret, array $params)
+    {
+        if (isset($params['hmac'])) {
+            $signature = $params['hmac'];
+            unset($params['signature']);
+            unset($params['hmac']);
+            return self::doGenerateSignature($secret, $params, true) === $signature;
+        }
         $signature = $params['signature'];
         unset($params['signature']);
-
-        return $this->generateSignature($params) === $signature;
-
+        return
+            self::doGenerateSignature($secret, $params, true) === $signature ||
+            self::doGenerateSignature($secret, $params, false) === $signature;
     }
 
     /**
@@ -234,20 +290,21 @@ class Client
                 $data = json_encode($params);
                 $response = $this->getHttpClient()->post($uri, $data);
                 break;
-            case 'PUT':
-            case 'DELETE':
+            case HttpClient::PUT:
+                $data = json_encode($params);
+                $response = $this->getHttpClient()->put($uri, $data);
+                break;
+            case HttpClient::DELETE:
+                $data = json_encode($params);
+                $response = $this->getHttpClient()->delete($uri, $data);
+                break;
             default:
                 throw new \RuntimeException(
-                    'Currently only "GET" and "POST" are supported. "PUT" and '
-                    . '"DELETE" functionality is currently under development'
+                    'Currently only "GET", "POST", "PUT" and "DELETE" are supported'
                 );
         }
 
         $response = json_decode($response);
-
-        if (isset($response->errors)) {
-            throw new \RuntimeException($response->errors);
-        }
 
         return $response;
 
@@ -257,7 +314,7 @@ class Client
      * get the HTTP Client
      * @return HttpClient
      */
-    protected function getHttpClient()
+    public function getHttpClient()
     {
         return $this->httpClient;
     }

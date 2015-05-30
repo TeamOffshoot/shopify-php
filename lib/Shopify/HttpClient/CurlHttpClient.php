@@ -11,7 +11,7 @@ class CurlHttpClient extends HttpClientAdapter
      * set to false to stop cURL from verifying the peer's certificate
      * @var boolean
      */
-    protected $verifyPeer = true;
+    protected $verifyPeer;
 
     /**
      * set to 1 to check the existence of a common name in the SSL peer
@@ -22,7 +22,7 @@ class CurlHttpClient extends HttpClientAdapter
      * be kept at 2 (default value).
      * @var integer
      */
-    protected $verifyHost = 2;
+    protected $verifyHost;
 
     /**
      * The name of a file holding one or more certificates to verify
@@ -42,11 +42,14 @@ class CurlHttpClient extends HttpClientAdapter
      *
      *
      * @param string $certificatePath
+     * @param bool $verifyPeer
      */
-    public function __construct($certificatePath = null)
+    public function __construct($certificatePath = null, $verifyPeer=true, $verifyHost=2)
     {
 
         $this->certificatePath = $certificatePath;
+        $this->verifyPeer = $verifyPeer;
+        $this->verifyHost = $verifyHost;
         $this->headers = array();
 
     }
@@ -100,6 +103,43 @@ class CurlHttpClient extends HttpClientAdapter
         return $this->makeRequest($ch);
 
     }
+    
+    public function put($uri, $params = null)
+    {
+    
+        $ch = $this->initCurlHandler($uri);
+	curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    
+        if (!is_null($params) && !is_array($params)) {
+            $this->headers[] = 'Content-Type: application/json';
+        }
+    
+        if (!is_null($params)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+        }
+    
+        return $this->makeRequest($ch);
+    
+    }
+    
+    public function delete($uri, $params = null)
+    {
+    
+        $ch = $this->initCurlHandler($uri);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+    
+        if (!is_null($params) && !is_array($params)) {
+            $this->headers[] = 'Content-Type: application/json';
+        }
+    
+        if (!is_null($params)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+        }
+    
+        return $this->makeRequest($ch);
+    
+    }
 
     /**
      * initialize the cURL handler
@@ -109,11 +149,11 @@ class CurlHttpClient extends HttpClientAdapter
     protected function initCurlHandler($uri)
     {
 
-        $headers = array();
+        $this->headers = array();
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $uri);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'offshoot/shopify-php client');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'cadicvnn/shopify-php client');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $this->verifyHost);
 
@@ -125,7 +165,6 @@ class CurlHttpClient extends HttpClientAdapter
         if ($this->verifyPeer === false) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         } else {
-
             // @see http://curl.haxx.se/docs/caextract.html
 
             if (!file_exists($this->certificatePath)) {

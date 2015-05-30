@@ -14,3 +14,4 @@ composer.lock
 # PHPUnit Files
 tests/phpunit.xml
 
+/lib/Examples/settings.json

@@ -1,11 +1,15 @@
 {
-  "name": "offshoot/shopify-php",
+  "name": "cadicvnn/shopify-php",
   "type": "library",
   "description": "Simple Shopify API client in PHP",
   "keywords": ["shopify","api"],
-  "homepage": "https://github.com/TeamOffshoot/shopify-php",
+  "homepage": "https://github.com/cadicvnn/shopify-php",
   "license": "MIT",
   "authors": [
+    {
+      "name": "Cadic",
+      "role": "Developer"
+    },
     {
       "name": "Chris Woodford",
       "email": "chris.woodford@gmail.com",
